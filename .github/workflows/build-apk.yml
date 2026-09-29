@@ -1,0 +1,38 @@
+name: Build SAWIT PRO v2 APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create Android platform files if missing
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --project-name=sawit_pro_v2 .
+          fi
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release --no-shrink
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAWIT_PRO_v2_APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

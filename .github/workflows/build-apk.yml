@@ -24,11 +24,56 @@ jobs:
             flutter create --platforms=android --project-name=sawit_pro_v2 .
           fi
 
+      - name: Configure Android for ML Kit OCR
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('android/app/build.gradle.kts')
+          if not path.exists():
+              path = Path('android/app/build.gradle')
+          if not path.exists():
+              raise SystemExit('android/app/build.gradle(.kts) tidak ditemukan')
+
+          text = path.read_text()
+          deps = [
+              'com.google.mlkit:text-recognition-chinese:16.0.1',
+              'com.google.mlkit:text-recognition-devanagari:16.0.1',
+              'com.google.mlkit:text-recognition-japanese:16.0.1',
+              'com.google.mlkit:text-recognition-korean:16.0.1',
+          ]
+
+          if path.suffix == '.kts':
+              lines = [f'    implementation("{d}")' for d in deps]
+          else:
+              lines = [f"    implementation '{d}'" for d in deps]
+
+          missing = [i for i, d in enumerate(deps) if d not in text]
+          if missing:
+              m = re.search(r'(?m)^dependencies\s*\{', text)
+              if not m:
+                  raise SystemExit(f'Blok dependencies tidak ditemukan di {path}')
+              addition = '\n' + '\n'.join(lines[i] for i in missing)
+              text = text[:m.end()] + addition + text[m.end():]
+              path.write_text(text)
+
+          final = path.read_text()
+          print(f'Configured: {path}')
+          for d in deps:
+              if d not in final:
+                  raise SystemExit('MISSING: ' + d)
+              print('OK: ' + d)
+          PY
+
+          echo '===== ML Kit dependencies ====='
+          grep -n 'text-recognition-' android/app/build.gradle* || true
+
       - name: Get packages
         run: flutter pub get
 
-      # Disable R8 shrinking for now. This avoids the ML Kit Korean class
-      # missing-class failure during minifyReleaseWithR8.
       - name: Build release APK
         run: flutter build apk --release --no-shrink
 

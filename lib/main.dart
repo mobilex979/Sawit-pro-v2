@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'layar/layar_rumah.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,11 +15,33 @@ class App extends StatelessWidget {
       title: 'SAWIT PRO v2',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF087443),
+          seedColor: Colors.deepPurple,
         ),
         useMaterial3: true,
       ),
       home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('SAWIT PRO v2'),
+      ),
+      body: const Center(
+        child: Text(
+          'SAWIT PRO v2',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }

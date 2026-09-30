@@ -24,46 +24,11 @@ jobs:
             flutter create --platforms=android --project-name=sawit_pro_v2 .
           fi
 
-      - name: Add ML Kit language dependencies
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          candidates = [
-              Path('android/app/build.gradle.kts'),
-              Path('android/app/build.gradle'),
-          ]
-
-          gradle = next((p for p in candidates if p.exists()), None)
-          if gradle is None:
-              raise SystemExit('android/app/build.gradle(.kts) tidak ditemukan')
-
-          text = gradle.read_text()
-          deps = '''
-              // ML Kit Text Recognition language modules required by
-              // google_mlkit_text_recognition during release/R8 builds.
-              implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
-              implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
-              implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
-              implementation("com.google.mlkit:text-recognition-korean:16.0.1")
-          '''
-
-          if 'text-recognition-korean:16.0.1' not in text:
-              match = re.search(r'(?m)^dependencies\\s*\\{', text)
-              if not match:
-                  raise SystemExit(f'blok dependencies tidak ditemukan di {gradle}')
-              insert_at = match.end()
-              text = text[:insert_at] + '\n' + deps + text[insert_at:]
-              gradle.write_text(text)
-              print(f'ML Kit language dependencies ditambahkan ke {gradle}')
-          else:
-              print('ML Kit language dependencies sudah ada')
-          PY
-
       - name: Get packages
         run: flutter pub get
 
+      # Disable R8 shrinking for now. This avoids the ML Kit Korean class
+      # missing-class failure during minifyReleaseWithR8.
       - name: Build release APK
         run: flutter build apk --release --no-shrink
 
